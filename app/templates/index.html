@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>URL Shortener</title>
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', path='/css/style.css') }}"
+    />
+  </head>
+
+  <body>
+    <main class="container">
+      <header>
+        <p class="brand">URL Shortener</p>
+        <h1>Shorten a link.</h1>
+        <p>Turn long URLs into short, shareable links.</p>
+      </header>
+
+      <form id="shorten-form" autocomplete="off">
+        <label for="url-input">URL to shorten</label>
+
+        <div class="input-group">
+          <input
+            type="url"
+            id="url-input"
+            name="url"
+            placeholder="https://example.com/very/long/url"
+            autocomplete="off"
+            required
+          />
+
+          <button type="submit">Shorten</button>
+        </div>
+      </form>
+
+      <div id="result" class="result hidden" aria-live="polite">
+        <p>Your short URL:</p>
+
+        <a
+          id="short-url"
+          href="#"
+          target="_blank"
+          rel="noopener noreferrer"
+        ></a>
+
+        <button id="copy-button" type="button">Copy</button>
+      </div>
+
+      <p id="error-message" class="error" role="alert"></p>
+    </main>
+
+    <script src="{{ url_for('static', path='/js/app.js') }}"></script>
+  </body>
+</html>
