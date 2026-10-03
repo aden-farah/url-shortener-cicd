@@ -10,7 +10,7 @@ The project currently includes:
 
 - FastAPI backend
 - PostgreSQL database
-- Docker Compose for running the application and database
+- D Compose for running the application and database
 - SQLAlchemy for database communication
 - Generate short codes for long URLs
 - Redirect short URLs to the original URL
