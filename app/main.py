@@ -1,5 +1,6 @@
 import secrets
 import string
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -14,7 +15,14 @@ from app.db import Base, engine, get_db
 
 APP_DIRECTORY = Path(__file__).resolve().parent
 
-app = FastAPI(title="URL Shortener API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    yield 
+
+
+app = FastAPI(title="URL Shortener API", lifespan=lifespan)
 
 app.mount(
     "/static",
@@ -25,8 +33,6 @@ app.mount(
 templates = Jinja2Templates(
     directory=APP_DIRECTORY / "templates",
 )
-
-Base.metadata.create_all(bind=engine)
 
 
 class URLRequest(BaseModel):
