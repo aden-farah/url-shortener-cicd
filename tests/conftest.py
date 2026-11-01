@@ -5,14 +5,14 @@ os.environ["DATABASE_URL"] = os.getenv(
     "postgresql+psycopg://postgres:postgres@localhost:5433/url_shortener_test",
 )
 
-import pytest  # noqa: E402
-from alembic import command  # noqa: E402
-from alembic.config import Config  # noqa: E402
-from fastapi.testclient import TestClient  # noqa: E402
-from sqlalchemy import text  # noqa: E402
+import pytest
+from alembic import command
+from alembic.config import Config
+from fastapi.testclient import TestClient
+from sqlalchemy import text
 
-from app.db import engine  # noqa: E402
-from app.main import app  # noqa: E402
+from app.db import engine
+from app.main import app
 
 
 @pytest.fixture(scope="session")

@@ -3,6 +3,7 @@ import secrets
 import string
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -25,6 +26,7 @@ logger = logging.getLogger("url_shortener")
 
 APP_DIRECTORY = Path(__file__).resolve().parent
 MAX_SHORT_CODE_ATTEMPTS = 5
+DbSession = Annotated[Session, Depends(get_db)]
 
 
 @asynccontextmanager
@@ -54,10 +56,7 @@ class URLRequest(BaseModel):
 def generate_short_code(length: int = 6) -> str:
     characters = string.ascii_letters + string.digits
 
-    return "".join(
-        secrets.choice(characters)
-        for _ in range(length)
-    )
+    return "".join(secrets.choice(characters) for _ in range(length))
 
 
 def create_url_with_unique_code(
@@ -107,7 +106,7 @@ def health():
 
 
 @app.get("/ready")
-def ready(db: Session = Depends(get_db)):
+def ready(db: DbSession):
     try:
         db.execute(text("SELECT 1"))
     except SQLAlchemyError:
@@ -124,7 +123,7 @@ def ready(db: Session = Depends(get_db)):
 def shorten_url(
     payload: URLRequest,
     request: Request,
-    db: Session = Depends(get_db),
+    db: DbSession,
 ):
     new_url = create_url_with_unique_code(db, str(payload.url))
 
@@ -141,7 +140,7 @@ def shorten_url(
 @app.get("/{short_code}")
 def redirect_url(
     short_code: str,
-    db: Session = Depends(get_db),
+    db: DbSession,
 ):
     result = db.execute(
         update(models.URL)

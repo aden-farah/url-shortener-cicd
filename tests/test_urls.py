@@ -77,9 +77,7 @@ def test_generate_short_code_uses_letters_and_digits():
 def test_shorten_retries_when_short_code_already_exists(client, monkeypatch):
     first = create_short_url(client)
     codes = iter([first["short_code"], "newcode1"])
-    monkeypatch.setattr(
-        "app.main.generate_short_code", lambda length=6: next(codes)
-    )
+    monkeypatch.setattr("app.main.generate_short_code", lambda length=6: next(codes))
 
     second = create_short_url(client, "https://example.com/other")
 
