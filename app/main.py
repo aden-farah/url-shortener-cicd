@@ -8,6 +8,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, HttpUrl
+from sqlalchemy import update
 from sqlalchemy.orm import Session
 
 from app import models
@@ -19,7 +20,7 @@ APP_DIRECTORY = Path(__file__).resolve().parent
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
-    yield 
+    yield
 
 
 app = FastAPI(title="URL Shortener API", lifespan=lifespan)
@@ -112,22 +113,23 @@ def redirect_url(
     short_code: str,
     db: Session = Depends(get_db),
 ):
-    url = (
-        db.query(models.URL)
-        .filter(models.URL.short_code == short_code)
-        .first()
+    result = db.execute(
+        update(models.URL)
+        .where(models.URL.short_code == short_code)
+        .values(click_count=models.URL.click_count + 1)
+        .returning(models.URL.original_url)
     )
+    original_url = result.scalar_one_or_none()
 
-    if url is None:
+    if original_url is None:
         raise HTTPException(
             status_code=404,
             detail="Short URL not found",
         )
 
-    url.click_count += 1
     db.commit()
 
     return RedirectResponse(
-        url=url.original_url,
+        url=original_url,
         status_code=307,
     )
