@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from app import models
 from app.config import LOG_LEVEL
-from app.db import Base, engine, get_db
+from app.db import get_db
 
 logging.basicConfig(
     level=LOG_LEVEL,
@@ -29,8 +29,6 @@ MAX_SHORT_CODE_ATTEMPTS = 5
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Creating database tables if they do not exist")
-    Base.metadata.create_all(bind=engine)
     logger.info("Application startup complete")
     yield
     logger.info("Application shutting down")
