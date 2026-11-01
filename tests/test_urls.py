@@ -71,3 +71,25 @@ def test_generate_short_code_uses_letters_and_digits():
 
     assert len(code) == 10
     assert code.isalnum()
+
+def test_shorten_retries_when_short_code_already_exists(client, monkeypatch):
+    first = create_short_url(client)
+    codes = iter([first["short_code"], "newcode1"])
+    monkeypatch.setattr(
+        "app.main.generate_short_code", lambda length=6: next(codes)
+    )
+
+    second = create_short_url(client, "https://example.com/other")
+
+    assert second["short_code"] == "newcode1"
+
+
+def test_shorten_returns_503_when_no_unique_code_found(client, monkeypatch):
+    first = create_short_url(client)
+    monkeypatch.setattr(
+        "app.main.generate_short_code", lambda length=6: first["short_code"]
+    )
+
+    response = client.post("/shorten", json={"url": "https://example.com/other"})
+
+    assert response.status_code == 503
