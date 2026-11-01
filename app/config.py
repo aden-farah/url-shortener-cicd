@@ -13,3 +13,4 @@ def get_required_env(name: str) -> str:
 
 
 DATABASE_URL = get_required_env("DATABASE_URL")
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()

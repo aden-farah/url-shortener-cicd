@@ -1,7 +1,8 @@
 import pytest
+from sqlalchemy.exc import OperationalError
 
-from app.db import SessionLocal
-from app.main import generate_short_code
+from app.db import SessionLocal, get_db
+from app.main import app, generate_short_code
 from app.models import URL
 
 EXAMPLE_URL = "https://example.com/some/page"
@@ -72,6 +73,7 @@ def test_generate_short_code_uses_letters_and_digits():
     assert len(code) == 10
     assert code.isalnum()
 
+
 def test_shorten_retries_when_short_code_already_exists(client, monkeypatch):
     first = create_short_url(client)
     codes = iter([first["short_code"], "newcode1"])
@@ -93,3 +95,27 @@ def test_shorten_returns_503_when_no_unique_code_found(client, monkeypatch):
     response = client.post("/shorten", json={"url": "https://example.com/other"})
 
     assert response.status_code == 503
+
+
+def test_ready_returns_ready_when_database_is_up(client):
+    response = client.get("/ready")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ready"}
+
+
+class BrokenSession:
+    def execute(self, *args, **kwargs):
+        raise OperationalError("SELECT 1", {}, Exception("database down"))
+
+
+def test_ready_returns_503_when_database_is_down(client):
+    app.dependency_overrides[get_db] = lambda: BrokenSession()
+
+    try:
+        response = client.get("/ready")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 503
+    assert response.json() == {"status": "unavailable"}
