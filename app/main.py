@@ -9,12 +9,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, HttpUrl
 from sqlalchemy import update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app import models
 from app.db import Base, engine, get_db
 
 APP_DIRECTORY = Path(__file__).resolve().parent
+MAX_SHORT_CODE_ATTEMPTS = 5
 
 
 @asynccontextmanager
@@ -49,21 +51,30 @@ def generate_short_code(length: int = 6) -> str:
     )
 
 
-def generate_unique_short_code(
+def create_url_with_unique_code(
     db: Session,
-    length: int = 6,
-) -> str:
-    while True:
-        short_code = generate_short_code(length)
-
-        existing_url = (
-            db.query(models.URL)
-            .filter(models.URL.short_code == short_code)
-            .first()
+    original_url: str,
+) -> models.URL:
+    for _ in range(MAX_SHORT_CODE_ATTEMPTS):
+        new_url = models.URL(
+            original_url=original_url,
+            short_code=generate_short_code(),
         )
+        db.add(new_url)
 
-        if existing_url is None:
-            return short_code
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            continue
+
+        db.refresh(new_url)
+        return new_url
+
+    raise HTTPException(
+        status_code=503,
+        detail="Could not create a short URL, please try again",
+    )
 
 
 @app.get("/")
@@ -86,17 +97,7 @@ def shorten_url(
     request: Request,
     db: Session = Depends(get_db),
 ):
-    short_code = generate_unique_short_code(db)
-    original_url = str(payload.url)
-
-    new_url = models.URL(
-        original_url=original_url,
-        short_code=short_code,
-    )
-
-    db.add(new_url)
-    db.commit()
-    db.refresh(new_url)
+    new_url = create_url_with_unique_code(db, str(payload.url))
 
     base_url = str(request.base_url).rstrip("/")
 
