@@ -69,6 +69,7 @@ Requirements: Docker with Docker Compose.
 ```bash
 git clone https://github.com/aden-farah/url-shortener-cicd.git
 cd url-shortener-cicd
+cp .env.example .env
 docker compose up -d --build
 ```
 
@@ -78,8 +79,7 @@ Open:
 http://localhost:8000
 ```
 
-The local Docker Compose setup uses development-only database credentials. The application reads its database connection from the `DATABASE_URL` environment variable and does not start if it is missing.
-
+Docker Compose reads the database credentials from a `.env` file, which is not committed. `.env.example` lists the required variables with development-only placeholder values. The application reads its database connection from the `DATABASE_URL` environment variable and does not start if it is missing.
 ## Running the tests
 
 The tests need Python 3.12 and the PostgreSQL container from Docker Compose.
@@ -107,6 +107,7 @@ Pull requests and pushes to `main` run:
 4. **Trivy** scans the image for high and critical vulnerabilities
 
 On pushes to `main`, the image that passed these checks is published to GitHub Container Registry and tagged with the commit SHA and `latest`.
+Pull requests cannot be merged into `main` unless the CI pipeline passes.
 
 ## API
 
